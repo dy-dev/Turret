@@ -2,11 +2,18 @@
 //
 
 #include <iostream>
+int howManyEnemies() {
+    int nbEnemies;
+    std::cout << "How many enemies do you want to fight ?\n";
+    std::cin >> nbEnemies;
+    return nbEnemies;
+}
 
 int main()
 {
-    int monInt = 0;
-    std::cout << "Hello World!\n"<< "Voici mon entier : "<< monInt << std::endl;
+    std::cout << "Hello Warrior!\n";
+
+    std::cout << "You asked for " << howManyEnemies() << "!!!" << std::endl;
 }
 
 // Exécuter le programme : Ctrl+F5 ou menu Déboguer > Exécuter sans débogage
