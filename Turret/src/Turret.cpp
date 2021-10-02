@@ -4,6 +4,7 @@
 #include <iostream>
 #include "Utilities.h"
 #include "raylib.h"
+#include "raymath.h"
 
 
   /*******************************************************************************************
@@ -30,6 +31,27 @@
 #include "raylib.h"
 #include <sstream>
 
+/*
+    Types definition
+*/
+
+struct Turret
+{
+    Vector2 position;         //Coordinate of the player in the window coordinate system
+    Vector2 centerRotation;  //Coordinates of the rotation center in the image coordinate system
+    float orientation;
+    Texture2D texture;
+};
+
+
+struct Shot
+{
+    Vector2 position;         //Coordinate of the player in the window coordinate system
+    Vector2 direction;  //Coordinates of the rotation center in the image coordinate system
+    float speed;
+    Texture2D texture;
+    bool fired;
+};
 int main(int argc, char** argv)
 {
     // Initialization
@@ -39,28 +61,46 @@ int main(int argc, char** argv)
 
     InitWindow(screenWidth, screenHeight, "raylib [core] example - basic window");
 
+    /*
+    * Player initialisation
+    */
+    Turret playerTurret = { {screenWidth / 2,screenHeight / 2},
+                            { },
+                            0.f,
+                            LoadTexture("./assets/textures/Player.png") };
+    playerTurret.centerRotation = { playerTurret.texture.height / 2.f,
+                                    playerTurret.texture.height / 2.f };
+
+    Rectangle sourcePlayerTextRectangle = { 0,0,playerTurret.texture.width ,playerTurret.texture.height };
+    Rectangle destPlayerTextRectangle =
+    {
+        screenWidth / 2 - playerTurret.centerRotation.x ,
+        screenHeight / 2 - playerTurret.centerRotation.y ,
+        playerTurret.texture.width ,playerTurret.texture.height
+    };
+
+    /*
+    * Shot initialisation
+    */
+    Shot shot = { playerTurret.position,
+                        { },
+                        8.f,
+                        LoadTexture("./assets/textures/Shot.png"),
+                        false };
+    Rectangle sourceShotTextRectangle = { 0,0,shot.texture.width ,shot.texture.height };
+    Rectangle destShotRectangle;
+
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
 
-
-    int enemies = howManyEnemies();
     unsigned int passedColor = myconvert(argv[1]);
-    Color  backgroundColor = {  getRedVal(passedColor),
+    Color  backgroundColor = { getRedVal(passedColor),
                                 getGreenVal(passedColor),
                                 getBlueVal(passedColor),
-                                255};
-    ///Find If the response is odd or even
-    // - First method : using a mask
-    int solution1 = enemies & 1;
-    //if solution1 == 0 number is even otherwise is odd
+                                255 };
 
-    // - Second method : using the shift operator (and a mask)
-    int solution2 = enemies ^ ((enemies >> 1) << 1);
-    //It drops the least significant bits and we can use
-    //the result as a mask to check if this bit was 1 (= odd)
-    //or 0 (= even)
     std::stringstream outstream;
-    outstream << "You want to fight " << enemies << " enemies !!";
+    // outstream << "You want to fight " << enemies << " enemies !!";
     std::stringstream colorstream;
 
     // Main game loop
@@ -74,15 +114,40 @@ int main(int argc, char** argv)
         //----------------------------------------------------------------------------------
         BeginDrawing();
         ClearBackground(backgroundColor);
-        DrawText(outstream.str().c_str(), 190, 200, 20, LIGHTGRAY);
-        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            colorstream.str("");
-            int color = getColor();
-            colorstream << "Your color decomposes as follow : " << std::endl;
-            colorstream << "\t-Red Value : " << getRedVal(color) << std::endl;
-            colorstream << "\t-Green Value : " << getGreenVal(color) << std::endl;
-            colorstream << "\t-Blue Value : " << getBlueVal(color) << std::endl;
+
+        Vector2 mousePosition = GetMousePosition();
+        Vector2 turretToMouse = Vector2Subtract(mousePosition, playerTurret.position);
+        playerTurret.orientation = Vector2Angle({}, turretToMouse);
+
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !shot.fired)
+        {
+            shot.direction = Vector2Normalize(turretToMouse);
+            shot.position = Vector2Add(playerTurret.position,
+                Vector2Scale(shot.direction, playerTurret.texture.width * .7f)
+            );
+            destShotRectangle = { shot.position.x - shot.texture.width / 2.f, shot.position.y - shot.texture.height / 2.f, (float)shot.texture.width * 0.75f, (float)shot.texture.height * 0.75f };
+            shot.fired = true;
         }
+
+        if (shot.fired)
+        {
+            destShotRectangle.x += shot.direction.x * shot.speed;
+            destShotRectangle.y += shot.direction.y * shot.speed;
+            DrawTexturePro(shot.texture, sourceShotTextRectangle, destShotRectangle,
+                { shot.texture.width * 0.75f / 2.f,shot.texture.height * 0.75f / 2.f }, 0, WHITE);
+
+            if (destShotRectangle.x > screenWidth + shot.texture.width / 2 ||
+                destShotRectangle.x <-shot.texture.width / 2 ||
+                destShotRectangle.y > screenHeight + shot.texture.height / 2 ||
+                destShotRectangle.y < -shot.texture.height / 2)
+            {
+                shot.fired = false;
+            }
+        }
+
+        DrawTexturePro(playerTurret.texture, sourcePlayerTextRectangle, destPlayerTextRectangle,
+            playerTurret.centerRotation, playerTurret.orientation, WHITE);
+
         DrawText(colorstream.str().c_str(), 190, 250, 20, LIGHTGRAY);
         EndDrawing();
         //----------------------------------------------------------------------------------
@@ -95,12 +160,6 @@ int main(int argc, char** argv)
 
     return 0;
 }
-//int main()
-//{
-//    std::cout << "Hello Warrior!\n";
-//    
-//    std::cout << "You asked for " << howManyEnemies() << " enemies !!!" << std::endl;
-//}
 
 // Exécuter le programme : Ctrl+F5 ou menu Déboguer > Exécuter sans débogage
 // Déboguer le programme : F5 ou menu Déboguer > Démarrer le débogage
