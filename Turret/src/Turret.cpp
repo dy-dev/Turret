@@ -35,6 +35,13 @@
     Types definition
 */
 
+enum class Quadrant {
+    NE,
+    SE,
+    SW,
+    NW
+};
+
 struct Turret
 {
     Vector2 position;         //Coordinate of the player in the window coordinate system
@@ -51,7 +58,12 @@ struct Shot
     float speed;
     Texture2D texture;
     bool fired;
+    Color tint;
 };
+
+Quadrant getQuadrant(float orientation);
+
+
 int main(int argc, char** argv)
 {
     // Initialization
@@ -127,6 +139,24 @@ int main(int argc, char** argv)
             );
             destShotRectangle = { shot.position.x - shot.texture.width / 2.f, shot.position.y - shot.texture.height / 2.f, (float)shot.texture.width * 0.75f, (float)shot.texture.height * 0.75f };
             shot.fired = true;
+            Quadrant destinationQuadrant = getQuadrant(playerTurret.orientation);
+            switch (destinationQuadrant)
+            {
+            case Quadrant::NE:
+                shot.tint = RED;
+                break;
+            case Quadrant::SE:
+                shot.tint = GREEN;
+                break;
+            case Quadrant::SW:
+                shot.tint = BLUE;
+                break;
+            case Quadrant::NW:
+                shot.tint = WHITE;
+                break;
+            default:
+                break;
+            }
         }
 
         if (shot.fired)
@@ -134,7 +164,8 @@ int main(int argc, char** argv)
             destShotRectangle.x += shot.direction.x * shot.speed;
             destShotRectangle.y += shot.direction.y * shot.speed;
             DrawTexturePro(shot.texture, sourceShotTextRectangle, destShotRectangle,
-                { shot.texture.width * 0.75f / 2.f,shot.texture.height * 0.75f / 2.f }, 0, WHITE);
+                { shot.texture.width * 0.75f / 2.f,shot.texture.height * 0.75f / 2.f }, 
+                0, shot.tint);
 
             if (destShotRectangle.x > screenWidth + shot.texture.width / 2 ||
                 destShotRectangle.x <-shot.texture.width / 2 ||
@@ -161,13 +192,16 @@ int main(int argc, char** argv)
     return 0;
 }
 
-// Exécuter le programme : Ctrl+F5 ou menu Déboguer > Exécuter sans débogage
-// Déboguer le programme : F5 ou menu Déboguer > Démarrer le débogage
 
-// Astuces pour bien démarrer : 
-//   1. Utilisez la fenêtre Explorateur de solutions pour ajouter des fichiers et les gérer.
-//   2. Utilisez la fenêtre Team Explorer pour vous connecter au contrôle de code source.
-//   3. Utilisez la fenêtre Sortie pour voir la sortie de la génération et d'autres messages.
-//   4. Utilisez la fenêtre Liste d'erreurs pour voir les erreurs.
-//   5. Accédez à Projet > Ajouter un nouvel élément pour créer des fichiers de code, ou à Projet > Ajouter un élément existant pour ajouter des fichiers de code existants au projet.
-//   6. Pour rouvrir ce projet plus tard, accédez à Fichier > Ouvrir > Projet et sélectionnez le fichier .sln.
+Quadrant getQuadrant(float orientation) {
+    if (orientation >= 0 && orientation < 90)
+        return Quadrant::SE;
+    else if (orientation >= 90 && orientation < 180)
+        return Quadrant::SW;
+    else if (orientation >= 180 && orientation < 270)
+        return Quadrant::NW;
+    else
+        return Quadrant::NE;
+
+    return Quadrant::NE;
+}
