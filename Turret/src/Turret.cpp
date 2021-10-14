@@ -42,6 +42,7 @@ enum class Quadrant {
     NW
 };
 
+
 struct Turret
 {
     Vector2 position;         //Coordinate of the player in the window coordinate system
@@ -60,6 +61,7 @@ struct Shot
     bool fired;
     Color tint;
     Rectangle destRectangle;
+    Rectangle boundingRectangle;
 };
 
 
@@ -71,12 +73,26 @@ struct Enemy
     Texture2D backTexture;
     Texture2D frontTexture;
     Color tint;
+    bool destroyed;
+    float orientation;
     Vector2 centerRotation;
     Rectangle destRectangle;
-    float orientation;
+    Rectangle boundingRectangle;
 };
 
+/**
+* Function declation
+*/
 Quadrant getQuadrant(float orientation);
+
+void checkCollision(Shot* munitions, Enemy* enemies);
+Rectangle getDestinationRectangle(Vector2 pos, Vector2 origin, Texture2D texture, float scaleFactor);
+
+/**
+* globale Variables declaration
+*/
+const int nbShots = 30;
+const int nbEnemies = 10;
 
 
 int main(int argc, char** argv)
@@ -117,28 +133,27 @@ int main(int argc, char** argv)
      Rectangle sourceShotTextRectangle = { 0,0,shot.texture.width ,shot.texture.height };
      Rectangle destShotRectangle;*/
 
-    const int nbShots = 30;
     Shot playerShots[nbShots];
 
     for (size_t i = 0; i < nbShots; i++)
     {
         playerShots[i] = { playerTurret.position,
                          { },
-                         2.f,
+                         1.f,
                          LoadTexture("./assets/textures/Shot.png"),
                          false };
     }
     //Source rectangle is the same for all shots since they all sharing the same texture
     Rectangle sourceShotTextRectangle = { 0,0,playerShots[0].texture.width ,playerShots[0].texture.height };
-    float targetWidth = (float)playerShots[0].texture.width*.7f;
-    float targetHeight = (float)playerShots[0].texture.height*.7f;
+    float shotScaleFactor = 0.7f;
+    float targetWidth = (float)playerShots[0].texture.width * shotScaleFactor;
+    float targetHeight = (float)playerShots[0].texture.height * shotScaleFactor;
 
 
     /**
     * Enemies initialisation
     */
 
-    const int nbEnemies = 10;
     Enemy enemies[nbEnemies];
 
     for (size_t i = 0; i < nbEnemies; i++)
@@ -152,17 +167,20 @@ int main(int argc, char** argv)
             {(unsigned char)GetRandomValue(0, 255),
             (unsigned char)GetRandomValue(0, 255),
             (unsigned char)GetRandomValue(0, 255),
-            255 }
+            255 },
+            false
         };
 
         enemies[i].centerRotation = { enemies[i].backTexture.width / 2.f,
                                     enemies[i].backTexture.height / 2.f };
 
-        enemies[i].destRectangle = {
-            enemies[i].position.x + enemies[i].centerRotation.x,
-            enemies[i].position.y + enemies[i].centerRotation.y,
-            (float)enemies[i].backTexture.width, (float)enemies[i].backTexture.height };
+        enemies[i].destRectangle = getDestinationRectangle(enemies[i].position,
 
+            enemies[i].centerRotation, enemies[i].backTexture, 1.f);
+
+        enemies[i].boundingRectangle = enemies[i].destRectangle;
+        enemies[i].boundingRectangle.x -= enemies[i].centerRotation.x;
+        enemies[i].boundingRectangle.y -= enemies[i].centerRotation.y;
 
         enemies[i].orientation = Vector2Angle({}, enemies[i].direction);
     }
@@ -209,16 +227,23 @@ int main(int argc, char** argv)
                     playerShots[i].direction = Vector2Normalize(turretToMouse);
                     playerShots[i].position =
                         Vector2Add(
-                            { playerTurret.position.x - targetWidth/ 2.f,
-                             playerTurret.position.y - targetHeight/2.f },
+                            { playerTurret.position.x - targetWidth / 2.f,
+                             playerTurret.position.y - targetHeight / 2.f },
                             Vector2Scale(playerShots[i].direction, playerTurret.texture.width * .6f)
                         );
 
-                    playerShots[i].destRectangle = {
+                    playerShots[i].destRectangle = getDestinationRectangle(playerShots[i].position,
+
+                        { targetWidth / 2.f ,  targetHeight / 2.f },
+                        playerShots[i].texture, shotScaleFactor);
+                        /* {
                         playerShots[i].position.x + targetWidth / 2.f,
                         playerShots[i].position.y + targetHeight / 2.f,
-                        targetWidth, targetHeight };
+                        targetWidth, targetHeight }*/
 
+                    playerShots[i].boundingRectangle = playerShots[i].destRectangle;
+                    playerShots[i].boundingRectangle.x -= targetWidth / 2.f;
+                    playerShots[i].boundingRectangle.y -= targetHeight / 2.f;
                     Quadrant destinationQuadrant = getQuadrant(playerTurret.orientation);
                     switch (destinationQuadrant)
                     {
@@ -248,29 +273,41 @@ int main(int argc, char** argv)
             {
                 playerShots[i].destRectangle.x += playerShots[i].direction.x * playerShots[i].speed;
                 playerShots[i].destRectangle.y += playerShots[i].direction.y * playerShots[i].speed;
+                playerShots[i].boundingRectangle.x += playerShots[i].direction.x * playerShots[i].speed;
+                playerShots[i].boundingRectangle.y += playerShots[i].direction.y * playerShots[i].speed;
+
                 DrawTexturePro(playerShots[i].texture, sourceShotTextRectangle,
                     playerShots[i].destRectangle,
                     { targetWidth / 2.f, targetHeight / 2.f },
                     0, playerShots[i].tint);
+                DrawRectangleLines(playerShots[i].boundingRectangle.x,
+                    playerShots[i].boundingRectangle.y,
+                    playerShots[i].boundingRectangle.width, playerShots[i].boundingRectangle.height, YELLOW);
                 DrawRectangleLines(playerShots[i].destRectangle.x,
                     playerShots[i].destRectangle.y,
-                    playerShots[i].destRectangle.width, playerShots[i].destRectangle.height, YELLOW);
+                    playerShots[i].destRectangle.width, playerShots[i].destRectangle.height, GREEN);
 
-                if (playerShots[i].destRectangle.x > screenWidth + playerShots[i].texture.width / 2 ||
-                    playerShots[i].destRectangle.x <-playerShots[i].texture.width / 2 ||
-                    playerShots[i].destRectangle.y > screenHeight + playerShots[i].texture.height / 2 ||
-                    playerShots[i].destRectangle.y < -playerShots[i].texture.height / 2)
+                if (playerShots[i].boundingRectangle.x > screenWidth + playerShots[i].texture.width / 2 ||
+                    playerShots[i].boundingRectangle.x <-playerShots[i].texture.width / 2 ||
+                    playerShots[i].boundingRectangle.y > screenHeight + playerShots[i].texture.height / 2 ||
+                    playerShots[i].boundingRectangle.y < -playerShots[i].texture.height / 2)
                 {
                     playerShots[i].fired = false;
                 }
             }
         }
 
-        int i = 0;
-        while (i < nbEnemies)
+        checkCollision(playerShots, enemies);
+        int i = -1;
+        while (++i < nbEnemies)
         {
+            if (enemies[i].destroyed)
+                continue;
+
             enemies[i].destRectangle.x += enemies[i].direction.x * enemies[i].speed;
             enemies[i].destRectangle.y += enemies[i].direction.y * enemies[i].speed;
+            enemies[i].boundingRectangle.x += enemies[i].direction.x * enemies[i].speed;
+            enemies[i].boundingRectangle.y += enemies[i].direction.y * enemies[i].speed;
 
             bool modif = false;
             //If enemies goes to far on the left or right  of the window
@@ -290,9 +327,9 @@ int main(int argc, char** argv)
             if (modif)
                 enemies[i].orientation = Vector2Angle({}, enemies[i].direction);
 
-            DrawRectangleLines(enemies[i].destRectangle.x - enemies[i].centerRotation.x,
-                enemies[i].destRectangle.y - enemies[i].centerRotation.y,
-                enemies[i].backTexture.width, enemies[i].backTexture.height, RED);
+            DrawRectangleLines(enemies[i].boundingRectangle.x,
+                enemies[i].boundingRectangle.y,
+                enemies[i].boundingRectangle.width, enemies[i].boundingRectangle.height, GREEN);
 
             DrawTexturePro(enemies[i].backTexture, sourceEnemmyTextRectangle,
                 enemies[i].destRectangle,
@@ -304,7 +341,6 @@ int main(int argc, char** argv)
                 { enemies[i].frontTexture.width / 2.f,
                 enemies[i].frontTexture.height / 2.f },
                 enemies[i].orientation - 45, enemies[i].tint);
-            i++;
         }
         DrawRectanglePro(destPlayerTextRectangle, playerTurret.centerRotation,
             playerTurret.orientation, RED);
@@ -313,7 +349,7 @@ int main(int argc, char** argv)
 
 
         DrawText(colorstream.str().c_str(), 190, 250, 20, LIGHTGRAY);
-        DrawLine(screenWidth / 2, screenHeight/2, mousePosition.x, mousePosition.y, GREEN);
+        DrawLine(screenWidth / 2, screenHeight / 2, mousePosition.x, mousePosition.y, GREEN);
         DrawLine(screenWidth / 2, 0, screenWidth / 2, screenHeight, GREEN);
         DrawLine(0, screenHeight / 2, screenWidth, screenHeight / 2, GREEN);
         EndDrawing();
@@ -342,3 +378,33 @@ Quadrant getQuadrant(float orientation) {
     return Quadrant::NE;
 }
 
+Rectangle getDestinationRectangle(Vector2 pos, Vector2 origin, Texture2D texture, float scaleFactor)
+{
+    return {
+        pos.x + origin.x,
+        pos.y + origin.y,
+        (float)texture.width * scaleFactor, (float)texture.height * scaleFactor };
+}
+
+
+void checkCollision(Shot* munitions, Enemy* enemies)
+{
+    for (size_t i = 0; i < nbShots; i++)
+    {
+        if (munitions[i].fired)
+        {
+            for (size_t j = 0; j < nbEnemies; j++)
+            {
+                Enemy& currentEnemy = *(enemies + j);
+                if (!currentEnemy.destroyed)
+                {
+                    if (CheckCollisionRecs(munitions[i].boundingRectangle, currentEnemy.boundingRectangle))
+                    {
+                        munitions[i].fired = false;
+                        currentEnemy.destroyed = true;
+                    }
+                }
+            }
+        }
+    }
+}
