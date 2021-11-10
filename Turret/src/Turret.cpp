@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include "Utilities.h"
+#include "Utils.h"
 #include "raylib.h"
 #include "raymath.h"
 
@@ -95,6 +96,19 @@ const int nbShots = 30;
 const int nbEnemies = 10;
 
 
+bool gameover = false;
+
+
+
+void changeTint(const char* pointerToEnemy)
+{
+    char* end;
+    unsigned long long enemyAdress = strtoull(pointerToEnemy, &end, 16);
+    Enemy* enemy = (Enemy*)enemyAdress;
+    enemy->tint = BLACK;
+}
+
+
 int main(int argc, char** argv)
 {
     // Initialization
@@ -153,39 +167,96 @@ int main(int argc, char** argv)
     /**
     * Enemies initialisation
     */
-
-    Enemy enemies[nbEnemies];
-
-    for (size_t i = 0; i < nbEnemies; i++)
+    const int nbColors = 4;
+    Enemy* coloredEnemies[nbColors];
+    int nbEnemybyColor[nbColors];
+    for (size_t i = 0; i < nbColors; i++)
     {
-        enemies[i] = {
-            {(float)GetRandomValue(100, screenWidth - 100),(float)GetRandomValue(100, screenHeight - 100)},
-            Vector2Normalize({(float)GetRandomValue(-100, 100), (float)GetRandomValue(-100, 100)}),
-            1.f,
-            LoadTexture("./assets/textures/Enemy.png"),
-            LoadTexture("./assets/textures/Enemy_color.png"),
-            {(unsigned char)GetRandomValue(0, 255),
-            (unsigned char)GetRandomValue(0, 255),
-            (unsigned char)GetRandomValue(0, 255),
-            255 },
-            false
-        };
+        char* color = nullptr;
+        Color c = WHITE;
+        switch (i)
+        {
+        case 0:
+            color = new char[] {"Red"};
+            c = RED;
+            break;
+        case 1:
+            color = new char[] {"Green"};
+            c = GREEN;
+            break;
+        case 2:
+            color = new char[] {"Blue"};
+            c = BLUE;
+            break;
+        case 3:
+            color = new char[] {"White"};
+            c = WHITE;
+            break;
+        default:
+            break;
+        }
+        nbEnemybyColor[i] = selectEnemyNumber(color);
+        coloredEnemies[i] = new Enemy[nbEnemybyColor[i]];
+        for (size_t j = 0; j < nbEnemybyColor[i]; j++)
+        {
+            coloredEnemies[i][j] = {
+                {(float)GetRandomValue(100, screenWidth - 100),(float)GetRandomValue(100, screenHeight - 100)},
+                Vector2Normalize({(float)GetRandomValue(-100, 100), (float)GetRandomValue(-100, 100)}),
+                1.f,
+                LoadTexture("./assets/textures/Enemy.png"),
+                LoadTexture("./assets/textures/Enemy_color.png"),
+                c,
+                false
+            };
 
-        enemies[i].centerRotation = { enemies[i].backTexture.width / 2.f,
-                                    enemies[i].backTexture.height / 2.f };
+            coloredEnemies[i][j].centerRotation = { coloredEnemies[i][j].backTexture.width / 2.f,
+                                   coloredEnemies[i][j].backTexture.height / 2.f };
 
-        enemies[i].destRectangle = getDestinationRectangle(enemies[i].position,
+            coloredEnemies[i][j].destRectangle = getDestinationRectangle(coloredEnemies[i][j].position,
 
-            enemies[i].centerRotation, enemies[i].backTexture, 1.f);
+                coloredEnemies[i][j].centerRotation, coloredEnemies[i][j].backTexture, 1.f);
 
-        enemies[i].boundingRectangle = enemies[i].destRectangle;
-        enemies[i].boundingRectangle.x -= enemies[i].centerRotation.x;
-        enemies[i].boundingRectangle.y -= enemies[i].centerRotation.y;
+            coloredEnemies[i][j].boundingRectangle = coloredEnemies[i][j].destRectangle;
+            coloredEnemies[i][j].boundingRectangle.x -= coloredEnemies[i][j].centerRotation.x;
+            coloredEnemies[i][j].boundingRectangle.y -= coloredEnemies[i][j].centerRotation.y;
+            coloredEnemies[i][j].orientation = Vector2Angle({}, coloredEnemies[i][j].direction);
+        }
 
-        enemies[i].orientation = Vector2Angle({}, enemies[i].direction);
+        delete[] color;
     }
-    Rectangle sourceEnemmyTextRectangle = { 0,0,enemies[0].backTexture.width ,
-        enemies[0].backTexture.height };
+
+
+    //Enemy enemies[nbEnemies];
+
+    //for (size_t i = 0; i < nbEnemies; i++)
+    //{
+    //    enemies[i] = {
+    //        {(float)GetRandomValue(100, screenWidth - 100),(float)GetRandomValue(100, screenHeight - 100)},
+    //        Vector2Normalize({(float)GetRandomValue(-100, 100), (float)GetRandomValue(-100, 100)}),
+    //        1.f,
+    //        LoadTexture("./assets/textures/Enemy.png"),
+    //        LoadTexture("./assets/textures/Enemy_color.png"),
+    //        {(unsigned char)GetRandomValue(0, 255),
+    //        (unsigned char)GetRandomValue(0, 255),
+    //        (unsigned char)GetRandomValue(0, 255),
+    //        255 },
+    //        false
+    //    };
+
+    //    enemies[i].centerRotation = { enemies[i].backTexture.width / 2.f,
+    //                                enemies[i].backTexture.height / 2.f };
+
+    //    enemies[i].destRectangle = getDestinationRectangle(enemies[i].position,
+
+    //        enemies[i].centerRotation, enemies[i].backTexture, 1.f);
+
+    //    enemies[i].boundingRectangle = enemies[i].destRectangle;
+    //    enemies[i].boundingRectangle.x -= enemies[i].centerRotation.x;
+    //    enemies[i].boundingRectangle.y -= enemies[i].centerRotation.y;
+
+    //    enemies[i].orientation = Vector2Angle({}, enemies[i].direction);
+    //}
+    Rectangle sourceEnemmyTextRectangle = { 0,0,coloredEnemies[0][0].backTexture.width ,coloredEnemies[0][0].backTexture.height };
 
 
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
@@ -213,147 +284,202 @@ int main(int argc, char** argv)
         BeginDrawing();
         ClearBackground(backgroundColor);
 
-        Vector2 mousePosition = GetMousePosition();
-        Vector2 turretToMouse = Vector2Subtract(mousePosition, playerTurret.position);
-        playerTurret.orientation = Vector2Angle({}, turretToMouse);
-
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        if (!gameover)
         {
-            //for (Shot shot : playerShots)
-            for (size_t i = 0; i < nbShots; i++)
+            Vector2 mousePosition = GetMousePosition();
+            Vector2 turretToMouse = Vector2Subtract(mousePosition, playerTurret.position);
+            playerTurret.orientation = Vector2Angle({}, turretToMouse);
+
+            if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             {
-                if (!playerShots[i].fired)
+                for (int i = 0; i < nbColors; i++)
                 {
-                    playerShots[i].direction = Vector2Normalize(turretToMouse);
-                    playerShots[i].position =
-                        Vector2Add(
-                            { playerTurret.position.x - targetWidth / 2.f,
-                             playerTurret.position.y - targetHeight / 2.f },
-                            Vector2Scale(playerShots[i].direction, playerTurret.texture.width * .6f)
-                        );
+                    if (coloredEnemies[i] == nullptr)
+                        continue;
 
-                    playerShots[i].destRectangle = getDestinationRectangle(playerShots[i].position,
+                    int j = -1;
+                    while (++j < nbEnemybyColor[i])
+                    {
+                        if (coloredEnemies[i][j].destroyed)
+                            continue;
 
-                        { targetWidth / 2.f ,  targetHeight / 2.f },
-                        playerShots[i].texture, shotScaleFactor);
+                        if (CheckCollisionPointRec(GetMousePosition(), coloredEnemies[i][j].boundingRectangle))
+                        {
+                            unsigned long long adress = (unsigned long long) & (coloredEnemies[i][j]);
+                            char buf[24];
+                            sprintf_s(buf, "%llX", adress);
+                            changeTint(buf);
+                            goto jumpToEndIf;
+                        }
+                    }
+                }
+                //for (Shot shot : playerShots)
+                for (size_t i = 0; i < nbShots; i++)
+                {
+                    if (!playerShots[i].fired)
+                    {
+                        playerShots[i].direction = Vector2Normalize(turretToMouse);
+                        playerShots[i].position =
+                            Vector2Add(
+                                { playerTurret.position.x - targetWidth / 2.f,
+                                 playerTurret.position.y - targetHeight / 2.f },
+                                Vector2Scale(playerShots[i].direction, playerTurret.texture.width * .6f)
+                            );
+
+                        playerShots[i].destRectangle = getDestinationRectangle(playerShots[i].position,
+
+                            { targetWidth / 2.f ,  targetHeight / 2.f },
+                            playerShots[i].texture, shotScaleFactor);
                         /* {
                         playerShots[i].position.x + targetWidth / 2.f,
                         playerShots[i].position.y + targetHeight / 2.f,
                         targetWidth, targetHeight }*/
 
-                    playerShots[i].boundingRectangle = playerShots[i].destRectangle;
-                    playerShots[i].boundingRectangle.x -= targetWidth / 2.f;
-                    playerShots[i].boundingRectangle.y -= targetHeight / 2.f;
-                    Quadrant destinationQuadrant = getQuadrant(playerTurret.orientation);
-                    switch (destinationQuadrant)
-                    {
-                    case Quadrant::NE:
-                        playerShots[i].tint = RED;
-                        break;
-                    case Quadrant::SE:
-                        playerShots[i].tint = GREEN;
-                        break;
-                    case Quadrant::SW:
-                        playerShots[i].tint = BLUE;
-                        break;
-                    case Quadrant::NW:
-                        playerShots[i].tint = WHITE;
-                        break;
-                    default:
+                        playerShots[i].boundingRectangle = playerShots[i].destRectangle;
+                        playerShots[i].boundingRectangle.x -= targetWidth / 2.f;
+                        playerShots[i].boundingRectangle.y -= targetHeight / 2.f;
+                        Quadrant destinationQuadrant = getQuadrant(playerTurret.orientation);
+                        switch (destinationQuadrant)
+                        {
+                        case Quadrant::NE:
+                            playerShots[i].tint = RED;
+                            break;
+                        case Quadrant::SE:
+                            playerShots[i].tint = GREEN;
+                            break;
+                        case Quadrant::SW:
+                            playerShots[i].tint = BLUE;
+                            break;
+                        case Quadrant::NW:
+                            playerShots[i].tint = WHITE;
+                            break;
+                        default:
+                            break;
+                        }
+                        playerShots[i].fired = true;
                         break;
                     }
-                    playerShots[i].fired = true;
-                    break;
                 }
             }
-        }
-        for (size_t i = 0; i < nbShots; i++)
-        {
-            if (playerShots[i].fired)
+        jumpToEndIf:
+            for (size_t i = 0; i < nbShots; i++)
             {
-                playerShots[i].destRectangle.x += playerShots[i].direction.x * playerShots[i].speed;
-                playerShots[i].destRectangle.y += playerShots[i].direction.y * playerShots[i].speed;
-                playerShots[i].boundingRectangle.x += playerShots[i].direction.x * playerShots[i].speed;
-                playerShots[i].boundingRectangle.y += playerShots[i].direction.y * playerShots[i].speed;
-
-                DrawTexturePro(playerShots[i].texture, sourceShotTextRectangle,
-                    playerShots[i].destRectangle,
-                    { targetWidth / 2.f, targetHeight / 2.f },
-                    0, playerShots[i].tint);
-                DrawRectangleLines(playerShots[i].boundingRectangle.x,
-                    playerShots[i].boundingRectangle.y,
-                    playerShots[i].boundingRectangle.width, playerShots[i].boundingRectangle.height, YELLOW);
-                DrawRectangleLines(playerShots[i].destRectangle.x,
-                    playerShots[i].destRectangle.y,
-                    playerShots[i].destRectangle.width, playerShots[i].destRectangle.height, GREEN);
-
-                if (playerShots[i].boundingRectangle.x > screenWidth + playerShots[i].texture.width / 2 ||
-                    playerShots[i].boundingRectangle.x <-playerShots[i].texture.width / 2 ||
-                    playerShots[i].boundingRectangle.y > screenHeight + playerShots[i].texture.height / 2 ||
-                    playerShots[i].boundingRectangle.y < -playerShots[i].texture.height / 2)
+                if (playerShots[i].fired)
                 {
-                    playerShots[i].fired = false;
+                    playerShots[i].destRectangle.x += playerShots[i].direction.x * playerShots[i].speed;
+                    playerShots[i].destRectangle.y += playerShots[i].direction.y * playerShots[i].speed;
+                    playerShots[i].boundingRectangle.x += playerShots[i].direction.x * playerShots[i].speed;
+                    playerShots[i].boundingRectangle.y += playerShots[i].direction.y * playerShots[i].speed;
+
+                    DrawTexturePro(playerShots[i].texture, sourceShotTextRectangle,
+                        playerShots[i].destRectangle,
+                        { targetWidth / 2.f, targetHeight / 2.f },
+                        0, playerShots[i].tint);
+                    DrawRectangleLines(playerShots[i].boundingRectangle.x,
+                        playerShots[i].boundingRectangle.y,
+                        playerShots[i].boundingRectangle.width, playerShots[i].boundingRectangle.height, YELLOW);
+                    DrawRectangleLines(playerShots[i].destRectangle.x,
+                        playerShots[i].destRectangle.y,
+                        playerShots[i].destRectangle.width, playerShots[i].destRectangle.height, GREEN);
+
+                    if (playerShots[i].boundingRectangle.x > screenWidth + playerShots[i].texture.width / 2 ||
+                        playerShots[i].boundingRectangle.x <-playerShots[i].texture.width / 2 ||
+                        playerShots[i].boundingRectangle.y > screenHeight + playerShots[i].texture.height / 2 ||
+                        playerShots[i].boundingRectangle.y < -playerShots[i].texture.height / 2)
+                    {
+                        playerShots[i].fired = false;
+                    }
                 }
             }
-        }
 
-        checkCollision(playerShots, enemies);
-        int i = -1;
-        while (++i < nbEnemies)
+            for (size_t i = 0; i < nbColors; i++)
+            {
+                checkCollision(playerShots, coloredEnemies[i]);
+            }
+            int colorsDestroyed = 1;
+            for (int i = 0; i < nbColors; i++)
+            {
+                int j = -1;
+                int nbDestroyed = 1;
+                if (coloredEnemies[i] == nullptr) {
+                    colorsDestroyed++;
+                    continue;
+                }
+
+                while (++j < nbEnemybyColor[i])
+                {
+                    if (coloredEnemies[i][j].destroyed)
+                    {
+                        nbDestroyed++;
+                        continue;
+                    }
+
+                    coloredEnemies[i][j].destRectangle.x += coloredEnemies[i][j].direction.x * coloredEnemies[i][j].speed;
+                    coloredEnemies[i][j].destRectangle.y += coloredEnemies[i][j].direction.y * coloredEnemies[i][j].speed;
+                    coloredEnemies[i][j].boundingRectangle.x += coloredEnemies[i][j].direction.x * coloredEnemies[i][j].speed;
+                    coloredEnemies[i][j].boundingRectangle.y += coloredEnemies[i][j].direction.y * coloredEnemies[i][j].speed;
+
+                    bool modif = false;
+                    //If enemies goes to far on the left or right  of the window
+                    if (coloredEnemies[i][j].destRectangle.x - coloredEnemies[i][j].centerRotation.x< 0 ||
+                        coloredEnemies[i][j].destRectangle.x + coloredEnemies[i][j].backTexture.width - coloredEnemies[i][j].centerRotation.x> screenWidth)
+                    {
+                        coloredEnemies[i][j].direction.x *= -1;
+                        modif = true;
+                    }
+
+                    if (coloredEnemies[i][j].destRectangle.y - coloredEnemies[i][j].centerRotation.y < 0 ||
+                        coloredEnemies[i][j].destRectangle.y + coloredEnemies[i][j].backTexture.height - coloredEnemies[i][j].centerRotation.y > screenHeight)
+                    {
+                        coloredEnemies[i][j].direction.y *= -1;
+                        modif = true;
+                    }
+                    if (modif)
+                        coloredEnemies[i][j].orientation = Vector2Angle({}, coloredEnemies[i][j].direction);
+
+                    DrawRectangleLines(coloredEnemies[i][j].boundingRectangle.x,
+                        coloredEnemies[i][j].boundingRectangle.y,
+                        coloredEnemies[i][j].boundingRectangle.width, coloredEnemies[i][j].boundingRectangle.height, GREEN);
+
+                    DrawTexturePro(coloredEnemies[i][j].backTexture, sourceEnemmyTextRectangle,
+                        coloredEnemies[i][j].destRectangle,
+                        { coloredEnemies[i][j].backTexture.width / 2.f,
+                        coloredEnemies[i][j].backTexture.height / 2.f },
+                        coloredEnemies[i][j].orientation - 45, WHITE);
+                    DrawTexturePro(coloredEnemies[i][j].frontTexture, sourceEnemmyTextRectangle,
+                        coloredEnemies[i][j].destRectangle,
+                        { coloredEnemies[i][j].frontTexture.width / 2.f,
+                        coloredEnemies[i][j].frontTexture.height / 2.f },
+                        coloredEnemies[i][j].orientation - 45, coloredEnemies[i][j].tint);
+                }
+                if (nbDestroyed == nbEnemybyColor[i])
+                {
+                    delete[] coloredEnemies[i];
+                    coloredEnemies[i] = nullptr;
+                }
+            }
+            if (colorsDestroyed == nbColors)
+                gameover = true;
+            DrawRectanglePro(destPlayerTextRectangle, playerTurret.centerRotation,
+                playerTurret.orientation, RED);
+            DrawTexturePro(playerTurret.texture, sourcePlayerTextRectangle, destPlayerTextRectangle,
+                playerTurret.centerRotation, playerTurret.orientation, WHITE);
+
+
+            DrawText(colorstream.str().c_str(), 190, 250, 20, LIGHTGRAY);
+            DrawLine(screenWidth / 2, screenHeight / 2, mousePosition.x, mousePosition.y, GREEN);
+            DrawLine(screenWidth / 2, 0, screenWidth / 2, screenHeight, GREEN);
+            DrawLine(0, screenHeight / 2, screenWidth, screenHeight / 2, GREEN);
+        }
+        else
         {
-            if (enemies[i].destroyed)
-                continue;
+            DrawText("GAME OVER", 190, 250, 90, LIGHTGRAY);
 
-            enemies[i].destRectangle.x += enemies[i].direction.x * enemies[i].speed;
-            enemies[i].destRectangle.y += enemies[i].direction.y * enemies[i].speed;
-            enemies[i].boundingRectangle.x += enemies[i].direction.x * enemies[i].speed;
-            enemies[i].boundingRectangle.y += enemies[i].direction.y * enemies[i].speed;
-
-            bool modif = false;
-            //If enemies goes to far on the left or right  of the window
-            if (enemies[i].destRectangle.x - enemies[i].centerRotation.x< 0 ||
-                enemies[i].destRectangle.x + enemies[i].backTexture.width - enemies[i].centerRotation.x> screenWidth)
-            {
-                enemies[i].direction.x *= -1;
-                modif = true;
-            }
-
-            if (enemies[i].destRectangle.y - enemies[i].centerRotation.y < 0 ||
-                enemies[i].destRectangle.y + enemies[i].backTexture.height - enemies[i].centerRotation.y > screenHeight)
-            {
-                enemies[i].direction.y *= -1;
-                modif = true;
-            }
-            if (modif)
-                enemies[i].orientation = Vector2Angle({}, enemies[i].direction);
-
-            DrawRectangleLines(enemies[i].boundingRectangle.x,
-                enemies[i].boundingRectangle.y,
-                enemies[i].boundingRectangle.width, enemies[i].boundingRectangle.height, GREEN);
-
-            DrawTexturePro(enemies[i].backTexture, sourceEnemmyTextRectangle,
-                enemies[i].destRectangle,
-                { enemies[i].backTexture.width / 2.f,
-                enemies[i].backTexture.height / 2.f },
-                enemies[i].orientation - 45, WHITE);
-            DrawTexturePro(enemies[i].frontTexture, sourceEnemmyTextRectangle,
-                enemies[i].destRectangle,
-                { enemies[i].frontTexture.width / 2.f,
-                enemies[i].frontTexture.height / 2.f },
-                enemies[i].orientation - 45, enemies[i].tint);
         }
-        DrawRectanglePro(destPlayerTextRectangle, playerTurret.centerRotation,
-            playerTurret.orientation, RED);
-        DrawTexturePro(playerTurret.texture, sourcePlayerTextRectangle, destPlayerTextRectangle,
-            playerTurret.centerRotation, playerTurret.orientation, WHITE);
 
-
-        DrawText(colorstream.str().c_str(), 190, 250, 20, LIGHTGRAY);
-        DrawLine(screenWidth / 2, screenHeight / 2, mousePosition.x, mousePosition.y, GREEN);
-        DrawLine(screenWidth / 2, 0, screenWidth / 2, screenHeight, GREEN);
-        DrawLine(0, screenHeight / 2, screenWidth, screenHeight / 2, GREEN);
         EndDrawing();
         //----------------------------------------------------------------------------------
+
     }
 
     // De-Initialization
@@ -365,7 +491,8 @@ int main(int argc, char** argv)
 }
 
 
-Quadrant getQuadrant(float orientation) {
+Quadrant getQuadrant(float orientation)
+{
     if (orientation >= 0 && orientation < 90)
         return Quadrant::SE;
     else if (orientation >= 90 && orientation < 180)
@@ -395,16 +522,20 @@ void checkCollision(Shot* munitions, Enemy* enemies)
         {
             for (size_t j = 0; j < nbEnemies; j++)
             {
-                Enemy& currentEnemy = *(enemies + j);
-                if (!currentEnemy.destroyed)
-                {
-                    if (CheckCollisionRecs(munitions[i].boundingRectangle, currentEnemy.boundingRectangle))
+                if (enemies != nullptr) {
+                    Enemy& currentEnemy = *(enemies + j);
+                    if (!currentEnemy.destroyed)
                     {
-                        munitions[i].fired = false;
-                        currentEnemy.destroyed = true;
+                        if (CheckCollisionRecs(munitions[i].boundingRectangle, currentEnemy.boundingRectangle) &&
+                            ColorToInt(currentEnemy.tint) == ColorToInt(munitions[i].tint))
+                        {
+                            munitions[i].fired = false;
+                            currentEnemy.destroyed = true;
+                        }
                     }
                 }
             }
         }
     }
 }
+

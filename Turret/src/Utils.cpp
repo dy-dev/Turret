@@ -9,3 +9,13 @@ float selectEnemySpeed()
 
     return speed;
 }
+
+
+int selectEnemyNumber(const char* color)
+{
+    std::cout << "How many enemies of color " << color<< " do you want?" << std::endl;
+    int nb;
+    std::cin >> nb;
+
+    return nb;
+}
