@@ -59,7 +59,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)../Raylib/src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)headers;$(SolutionDir)../Raylib/src</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -76,7 +76,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)../Raylib/src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)headers;$(SolutionDir)../Raylib/src</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -88,12 +88,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Enemy.cpp" />
+    <ClCompile Include="src\Munition.cpp" />
+    <ClCompile Include="src\Player.cpp" />
     <ClCompile Include="src\Turret.cpp" />
     <ClCompile Include="src\Utilities.cpp" />
     <ClCompile Include="src\Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\..\..\Arcreane\Work\ISART\RaylibVS2019\raylib\resource.h" />
+    <ClInclude Include="headers\Enemy.h" />
+    <ClInclude Include="headers\Player.h" />
+    <ClInclude Include="headers\Munition.h" />
     <ClInclude Include="include\Utilities.h" />
     <ClInclude Include="include\Utils.h" />
   </ItemGroup>

@@ -7,6 +7,8 @@
 #include "raylib.h"
 #include "raymath.h"
 
+#include "Player.h"
+
 
   /*******************************************************************************************
 *
@@ -46,7 +48,7 @@ enum class Quadrant {
 
 struct Turret
 {
-    Vector2 position;         //Coordinate of the player in the window coordinate system
+    Vector2 m_position;         //Coordinate of the player in the window coordinate system
     Vector2 centerRotation;  //Coordinates of the rotation center in the image coordinate system
     float orientation;
     Texture2D texture;
@@ -55,7 +57,7 @@ struct Turret
 
 struct Shot
 {
-    Vector2 position;         //Coordinate of the player in the window coordinate system
+    Vector2 m_position;         //Coordinate of the player in the window coordinate system
     Vector2 direction;  //Coordinates of the rotation center in the image coordinate system
     float speed;
     Texture2D texture;
@@ -68,7 +70,7 @@ struct Shot
 
 struct Enemy
 {
-    Vector2 position;
+    Vector2 m_position;
     Vector2 direction;
     float speed;
     Texture2D backTexture;
@@ -139,7 +141,7 @@ int main(int argc, char** argv)
     /*
     * Shot initialisation
     */
-    /* Shot shot = { playerTurret.position,
+    /* Shot shot = { playerTurret.m_position,
                          { },
                          8.f,
                          LoadTexture("./assets/textures/Shot.png"),
@@ -151,7 +153,7 @@ int main(int argc, char** argv)
 
     for (size_t i = 0; i < nbShots; i++)
     {
-        playerShots[i] = { playerTurret.position,
+        playerShots[i] = { playerTurret.m_position,
                          { },
                          1.f,
                          LoadTexture("./assets/textures/Shot.png"),
@@ -212,7 +214,7 @@ int main(int argc, char** argv)
             coloredEnemies[i][j].centerRotation = { coloredEnemies[i][j].backTexture.width / 2.f,
                                    coloredEnemies[i][j].backTexture.height / 2.f };
 
-            coloredEnemies[i][j].destRectangle = getDestinationRectangle(coloredEnemies[i][j].position,
+            coloredEnemies[i][j].destRectangle = getDestinationRectangle(coloredEnemies[i][j].m_position,
 
                 coloredEnemies[i][j].centerRotation, coloredEnemies[i][j].backTexture, 1.f);
 
@@ -246,7 +248,7 @@ int main(int argc, char** argv)
     //    enemies[i].centerRotation = { enemies[i].backTexture.width / 2.f,
     //                                enemies[i].backTexture.height / 2.f };
 
-    //    enemies[i].destRectangle = getDestinationRectangle(enemies[i].position,
+    //    enemies[i].destRectangle = getDestinationRectangle(enemies[i].m_position,
 
     //        enemies[i].centerRotation, enemies[i].backTexture, 1.f);
 
@@ -287,7 +289,7 @@ int main(int argc, char** argv)
         if (!gameover)
         {
             Vector2 mousePosition = GetMousePosition();
-            Vector2 turretToMouse = Vector2Subtract(mousePosition, playerTurret.position);
+            Vector2 turretToMouse = Vector2Subtract(mousePosition, playerTurret.m_position);
             playerTurret.orientation = Vector2Angle({}, turretToMouse);
 
             if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
@@ -319,20 +321,20 @@ int main(int argc, char** argv)
                     if (!playerShots[i].fired)
                     {
                         playerShots[i].direction = Vector2Normalize(turretToMouse);
-                        playerShots[i].position =
+                        playerShots[i].m_position =
                             Vector2Add(
-                                { playerTurret.position.x - targetWidth / 2.f,
-                                 playerTurret.position.y - targetHeight / 2.f },
+                                { playerTurret.m_position.x - targetWidth / 2.f,
+                                 playerTurret.m_position.y - targetHeight / 2.f },
                                 Vector2Scale(playerShots[i].direction, playerTurret.texture.width * .6f)
                             );
 
-                        playerShots[i].destRectangle = getDestinationRectangle(playerShots[i].position,
+                        playerShots[i].destRectangle = getDestinationRectangle(playerShots[i].m_position,
 
                             { targetWidth / 2.f ,  targetHeight / 2.f },
                             playerShots[i].texture, shotScaleFactor);
                         /* {
-                        playerShots[i].position.x + targetWidth / 2.f,
-                        playerShots[i].position.y + targetHeight / 2.f,
+                        playerShots[i].m_position.x + targetWidth / 2.f,
+                        playerShots[i].m_position.y + targetHeight / 2.f,
                         targetWidth, targetHeight }*/
 
                         playerShots[i].boundingRectangle = playerShots[i].destRectangle;
