@@ -1,4 +1,5 @@
 #include <iostream>
+#include "raylib.h"
 #include "Utils.h"
 #include "Utilities.h"
 
@@ -26,12 +27,21 @@ unsigned int myconvert(char colorArray[]) {
     return color;
 }
 
-unsigned int getRedVal(int color) {
+unsigned char getRedVal(int color) {
     return (color >> 16);
 }
-unsigned int getGreenVal(int color) {
+unsigned char getGreenVal(int color) {
     return ((color >> 8) & 0x00FF);
 }
-unsigned int getBlueVal(int color) {
+unsigned char getBlueVal(int color) {
     return (color & 0x0000FF);
+}
+
+
+Rectangle getDestinationRectangle(Vector2 pos, Vector2 origin, Texture2D texture, float scaleFactor)
+{
+    return {
+        pos.x + origin.x,
+        pos.y + origin.y,
+        (float)texture.width * scaleFactor, (float)texture.height * scaleFactor };
 }

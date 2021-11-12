@@ -5,12 +5,16 @@
 //struct Rectangle;
 class Enemy
 {
+public:
+    Enemy();
+
     Vector2 getPosition(){ return m_Position; }
     Vector2 getDirection() { return m_Direction; }
     float getSpeed() { return m_fSpeed; }
     Texture getBackTexture() { return m_BackTexture; }
     Texture getFrontTexture() { return m_FrontTexture; }
     Color getTint() { return m_Tint; }
+    void setTint(int p_iColor) { m_Tint = GetColor(p_iColor); }
     bool getDestroyed() { return m_bDestroyed; }
     float getOrientation() { return m_fOrientation; }
     Vector2 getCenterRotation() { return m_CenterRotation; }
@@ -19,6 +23,7 @@ class Enemy
 
 
     void update();
+    void draw();
 
 private:
     Vector2 m_Position;
@@ -30,6 +35,7 @@ private:
     bool m_bDestroyed;
     float m_fOrientation;
     Vector2 m_CenterRotation;
+    Rectangle m_SourceRectangle;
     Rectangle m_DestRectangle;
     Rectangle m_BoundingRectangle;
 };

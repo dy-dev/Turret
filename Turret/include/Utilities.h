@@ -1,5 +1,5 @@
 #pragma once
-
+#include "raylib.h"
 
 int howManyEnemies(void);
 
@@ -9,6 +9,8 @@ unsigned int myconvert(char color[]);
 unsigned int getColor();
 
 
-unsigned int getRedVal(int color);
-unsigned int getGreenVal(int color);
-unsigned int getBlueVal(int color);
+unsigned char getRedVal(int color);
+unsigned char getGreenVal(int color);
+unsigned char getBlueVal(int color);
+
+Rectangle getDestinationRectangle(Vector2 pos, Vector2 origin, Texture2D texture, float scaleFactor);
