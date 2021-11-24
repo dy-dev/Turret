@@ -2,6 +2,7 @@
 #include "raymath.h"
 #include "Utilities.h"
 #include "GameManager.h"
+#include "Munition.h"
 #include "Enemy.h"
 
 Enemy::Enemy()
@@ -16,10 +17,17 @@ Enemy::Enemy()
     , m_DestRectangle{ getDestinationRectangle(m_Position, m_CenterRotation, m_BackTexture, 1.f) }
     , m_BoundingRectangle{ m_DestRectangle }
     , m_fOrientation{ Vector2Angle({}, m_Direction) }
+    , m_Munition{new Munition(this)}
 {
 
     m_BoundingRectangle.x -= m_CenterRotation.x;
     m_BoundingRectangle.y -= m_CenterRotation.y;
+    
+}
+
+Enemy::~Enemy()
+{
+    delete m_Munition;
 }
 
 void Enemy::update()

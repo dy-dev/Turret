@@ -7,7 +7,7 @@ class Enemy
 {
 public:
     Enemy();
-
+    ~Enemy();
     Vector2 getPosition(){ return m_Position; }
     Vector2 getDirection() { return m_Direction; }
     float getSpeed() { return m_fSpeed; }
@@ -16,6 +16,7 @@ public:
     Color getTint() { return m_Tint; }
     void setTint(int p_iColor) { m_Tint = GetColor(p_iColor); }
     bool getDestroyed() { return m_bDestroyed; }
+    void setDestroyed(bool p_bDestroyed) { m_bDestroyed = p_bDestroyed; }
     float getOrientation() { return m_fOrientation; }
     Vector2 getCenterRotation() { return m_CenterRotation; }
     Rectangle getDestRectangle() { return m_DestRectangle; }
@@ -38,5 +39,7 @@ private:
     Rectangle m_SourceRectangle;
     Rectangle m_DestRectangle;
     Rectangle m_BoundingRectangle;
+
+    class Munition* m_Munition;
 };
 
